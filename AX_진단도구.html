@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI·AX 도입 진단 프레임워크 — 2026</title>
+<style>
+/* ========== RESET & BASE ========== */
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,'Malgun Gothic','맑은 고딕','Noto Sans KR',sans-serif;color:#1a1a2e;background:#f0f2f8;line-height:1.7;-webkit-font-smoothing:antialiased}
+
+/* ========== CSS VARIABLES ========== */
+:root{
+  --primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--primary-50:#eff6ff;
+  --navy:#0f172a;--navy-light:#1e293b;
+  --success:#059669;--success-light:#d1fae5;
+  --warning:#d97706;--warning-light:#fef3c7;
+  --danger:#dc2626;--danger-light:#fee2e2;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;
+  --gray-400:#94a3b8;--gray-500:#64748b;--gray-600:#475569;--gray-700:#334155;
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -2px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -4px rgba(0,0,0,.04);
+  --shadow-xl:0 20px 25px -5px rgba(0,0,0,.08),0 8px 10px -6px rgba(0,0,0,.04);
+}
+
+/* ========== LAYOUT ========== */
+.app-container{max-width:800px;margin:0 auto;padding:16px;min-height:100vh}
+@media(min-width:768px){.app-container{padding:32px}}
+
+/* ========== PROGRESS BAR ========== */
+.progress-wrapper{position:sticky;top:0;z-index:100;background:rgba(240,242,248,.92);backdrop-filter:blur(12px);padding:12px 0 8px;margin-bottom:24px}
+.progress-steps{display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.progress-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid var(--gray-300);color:var(--gray-400);background:#fff;transition:all .3s}
+.step-dot.active{border-color:var(--primary);color:#fff;background:var(--primary);box-shadow:0 0 0 4px var(--primary-light)}
+.step-dot.done{border-color:var(--success);color:#fff;background:var(--success)}
+.step-label{font-size:11px;color:var(--gray-400);font-weight:500;white-space:nowrap}
+.step-label.active{color:var(--primary);font-weight:700}
+.step-label.done{color:var(--success)}
+.step-connector{position:absolute;top:16px;left:calc(50% + 20px);width:calc(100% - 40px);height:2px;background:var(--gray-200)}
+.step-connector.done{background:var(--success)}
+.progress-bar-track{height:4px;background:var(--gray-200);border-radius:2px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),#7c3aed);border-radius:2px;transition:width .4s ease}
+
+/* ========== CARDS ========== */
+.card{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:32px;margin-bottom:24px}
+.card-elevated{box-shadow:var(--shadow-lg)}
+@media(max-width:640px){.card{padding:20px;border-radius:var(--radius)}}
+
+/* ========== SCREEN 1: INTRO ========== */
+.intro-hero{background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 50%,var(--primary-dark) 100%);color:#fff;border-radius:var(--radius-xl);padding:48px 36px;text-align:center;position:relative;overflow:hidden;margin-bottom:24px}
+.intro-hero::before{content:'';position:absolute;top:-60%;right:-20%;width:60%;height:140%;background:radial-gradient(ellipse,rgba(37,99,235,.2),transparent 70%)}
+.intro-badge{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:20px}
+.intro-title{font-size:28px;font-weight:800;line-height:1.35;margin-bottom:12px;position:relative}
+@media(min-width:768px){.intro-title{font-size:36px}}
+.intro-title .hl{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.intro-sub{font-size:15px;opacity:.8;max-width:560px;margin:0 auto 28px;line-height:1.7}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--radius);font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35)}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.4)}
+.btn-secondary{background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-200)}
+.btn-secondary:hover{background:var(--gray-200)}
+.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+.btn-outline:hover{background:var(--primary-50)}
+.btn-sm{padding:10px 20px;font-size:13px}
+.btn-lg{padding:16px 40px;font-size:17px}
+.btn-white{background:#fff;color:var(--navy);font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.btn-white:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+
+.intro-features{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:640px){.intro-features{grid-template-columns:1fr 1fr}}
+.feature-card{display:flex;gap:14px;padding:20px;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200)}
+.feature-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.feature-icon.blue{background:var(--primary-light);color:var(--primary)}
+.feature-icon.green{background:var(--success-light);color:var(--success)}
+.feature-icon.orange{background:var(--warning-light);color:var(--warning)}
+.feature-icon.purple{background:#ede9fe;color:#7c3aed}
+.feature-title{font-size:14px;font-weight:700;margin-bottom:2px}
+.feature-desc{font-size:12px;color:var(--gray-500);line-height:1.5}
+
+/* ========== SCREEN 2: INFO ========== */
+.form-group{margin-bottom:20px}
+.form-label{display:block;font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.form-label .optional{font-size:12px;color:var(--gray-400);font-weight:400;margin-left:6px}
+.form-input{width:100%;padding:12px 16px;border:2px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:inherit;transition:border-color .2s;background:#fff}
+.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.radio-group{display:grid;gap:10px}
+.radio-option{display:flex;align-items:center;gap:12px;padding:14px 18px;border:2px solid var(--gray-200);border-radius:var(--radius);cursor:pointer;transition:all .2s;background:#fff}
+.radio-option:hover{border-color:var(--primary-light);background:var(--primary-50)}
+.radio-option.selected{border-color:var(--primary);background:var(--primary-50)}
+.radio-option input{display:none}
+.radio-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray-300);position:relative;flex-shrink:0;transition:all .2s}
+.radio-option.selected .radio-dot{border-color:var(--primary);background:var(--primary)}
+.radio-option.selected .radio-dot::after{content:'';position:absolute;top:4px;left:4px;width:8px;height:8px;border-radius:50%;background:#fff}
+.radio-text{font-size:14px;font-weight:600}
+.radio-sub{font-size:12px;color:var(--gray-500);margin-top:2px}
+
+/* ========== SCREEN 3: QUESTIONS ========== */
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--gray-200)}
+.section-badge{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff}
+.section-badge.a{background:var(--primary)}
+.section-badge.b{background:#7c3aed}
+.section-badge.c{background:var(--warning)}
+.section-badge.d{background:var(--success)}
+.section-title{font-size:18px;font-weight:800;color:var(--navy)}
+.section-subtitle{font-size:13px;color:var(--gray-500)}
+.question-item{padding:18px 0;border-bottom:1px solid var(--gray-100)}
+.question-item:last-child{border-bottom:none}
+.question-number{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.question-text{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px;line-height:1.6}
+.score-options{display:flex;gap:8px;flex-wrap:wrap}
+.score-btn{flex:1;min-width:80px;padding:10px 12px;border:2px solid var(--gray-200);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;background:#fff}
+.score-btn:hover{border-color:var(--primary-light);background:var(--primary-50)}
+.score-btn.selected{border-color:var(--primary);background:var(--primary);color:#fff}
+.score-btn .score-val{font-size:18px;font-weight:800;display:block}
+.score-btn .score-label{font-size:10px;display:block;margin-top:2px;opacity:.8}
+.score-btn.selected .score-label{opacity:1}
+.question-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;gap:12px}
+.q-counter{font-size:13px;color:var(--gray-500);font-weight:600}
+.validation-msg{background:var(--danger-light);color:var(--danger);padding:12px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-top:12px;display:none}
+.validation-msg.show{display:block}
+
+/* ========== SCREEN 4: RESULTS ========== */
+.result-hero{background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 60%,var(--primary-dark) 100%);color:#fff;border-radius:var(--radius-xl);padding:40px 32px;text-align:center;position:relative;overflow:hidden;margin-bottom:24px}
+.result-hero::before{content:'';position:absolute;top:-40%;right:-15%;width:50%;height:120%;background:radial-gradient(ellipse,rgba(37,99,235,.15),transparent 70%)}
+.result-level-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);padding:8px 20px;border-radius:24px;font-size:13px;font-weight:600;margin-bottom:16px;position:relative}
+.result-level-name{font-size:36px;font-weight:900;margin-bottom:8px;position:relative}
+@media(min-width:768px){.result-level-name{font-size:44px}}
+.result-level-desc{font-size:15px;opacity:.8;max-width:500px;margin:0 auto;line-height:1.7}
+
+/* Score overview */
+.score-overview{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+@media(min-width:640px){.score-overview{grid-template-columns:repeat(4,1fr)}}
+.score-card{text-align:center;padding:20px 12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.score-card.a::before{background:var(--primary)}
+.score-card.b::before{background:#7c3aed}
+.score-card.c::before{background:var(--warning)}
+.score-card.d::before{background:var(--success)}
+.score-card-label{font-size:11px;font-weight:700;color:var(--gray-500);margin-bottom:4px;letter-spacing:.5px}
+.score-card-value{font-size:28px;font-weight:900}
+.score-card.a .score-card-value{color:var(--primary)}
+.score-card.b .score-card-value{color:#7c3aed}
+.score-card.c .score-card-value{color:var(--warning)}
+.score-card.d .score-card-value{color:var(--success)}
+.score-card-max{font-size:14px;font-weight:400;color:var(--gray-400)}
+
+/* Total score gauge */
+.gauge-wrapper{text-align:center;padding:24px;margin-bottom:24px}
+.gauge-svg{width:200px;height:120px}
+.gauge-score-text{font-size:40px;font-weight:900;fill:var(--navy)}
+.gauge-max-text{font-size:14px;fill:var(--gray-400)}
+.gauge-label{font-size:14px;color:var(--gray-500);margin-top:8px;font-weight:600}
+
+/* Radar chart */
+.radar-wrapper{display:flex;justify-content:center;padding:20px 0}
+.radar-svg{width:280px;height:280px}
+@media(min-width:640px){.radar-svg{width:320px;height:320px}}
+
+/* Gate conditions */
+.gate-section{margin-bottom:24px}
+.gate-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:var(--radius);margin-bottom:8px}
+.gate-item.pass{background:var(--success-light)}
+.gate-item.fail{background:var(--danger-light)}
+.gate-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.gate-text{font-size:13px;font-weight:600}
+.gate-item.pass .gate-text{color:#065f46}
+.gate-item.fail .gate-text{color:#991b1b}
+
+/* Result blocks */
+.result-block{margin-bottom:24px}
+.result-block-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.result-block-number{width:28px;height:28px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.result-block-title{font-size:17px;font-weight:800;color:var(--navy)}
+.priority-item{display:flex;gap:12px;padding:14px 18px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--primary)}
+.priority-num{font-size:20px;font-weight:900;color:var(--primary);flex-shrink:0}
+.priority-text{font-size:14px;line-height:1.6}
+.priority-text strong{color:var(--navy)}
+.timeline-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--gray-100)}
+.timeline-item:last-child{border-bottom:none}
+.timeline-period{min-width:72px;padding:6px 12px;background:var(--primary-light);color:var(--primary-dark);border-radius:8px;font-size:12px;font-weight:700;text-align:center;flex-shrink:0;height:fit-content}
+.timeline-content{font-size:14px;line-height:1.7}
+.callout{padding:20px 24px;border-radius:var(--radius);margin:16px 0}
+.callout-navy{background:var(--navy);color:#fff}
+.callout-navy strong{color:#60a5fa}
+.callout-blue{background:var(--primary-50);border:1px solid var(--primary-light);color:var(--navy)}
+.callout-warn{background:var(--warning-light);border:1px solid #fde68a;color:#92400e}
+
+/* Bar chart */
+.bar-chart{margin:16px 0}
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.bar-label{width:80px;font-size:12px;font-weight:700;color:var(--gray-600);text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:var(--gray-100);border-radius:6px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px}
+.bar-fill span{font-size:11px;font-weight:700;color:#fff}
+.bar-fill.a{background:linear-gradient(90deg,var(--primary),#3b82f6)}
+.bar-fill.b{background:linear-gradient(90deg,#7c3aed,#8b5cf6)}
+.bar-fill.c{background:linear-gradient(90deg,var(--warning),#f59e0b)}
+.bar-fill.d{background:linear-gradient(90deg,var(--success),#10b981)}
+
+/* Actions bar */
+.actions-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:24px 0}
+
+/* Footer */
+.app-footer{text-align:center;padding:24px;font-size:12px;color:var(--gray-400)}
+.app-footer a{color:var(--primary);text-decoration:none}
+
+/* Utility */
+.hidden{display:none!important}
+.text-center{text-align:center}
+.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* level colors */
+.level-1{color:#dc2626}.level-2{color:#d97706}.level-3{color:var(--primary)}.level-4{color:#7c3aed}.level-5{color:var(--success)}
+
+/* ========== PRINT STYLES ========== */
+@media print{
+  body{background:#fff;font-size:10pt}
+  .app-container{max-width:100%;padding:0}
+  .progress-wrapper,.actions-bar,.btn,.app-footer,.intro-hero,.no-print{display:none!important}
+  .card{box-shadow:none;border:1px solid #e5e5e5;break-inside:avoid;margin-bottom:12px;padding:16px}
+  .result-hero{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:24px;margin-bottom:12px}
+  .score-card::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .bar-fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .gate-item{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .callout-navy{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:15mm}
+}
+
+/* ========== SAMPLE PREVIEW BUTTON ========== */
+.sample-btn{position:fixed;bottom:20px;right:20px;z-index:200;background:var(--navy);color:#fff;padding:10px 18px;border-radius:24px;font-size:12px;font-weight:700;border:none;cursor:pointer;box-shadow:var(--shadow-lg);transition:all .2s}
+.sample-btn:hover{background:var(--primary);transform:translateY(-2px)}
+</style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+  <!-- Progress Bar -->
+  <div class="progress-wrapper" id="progressWrapper">
+    <div class="progress-steps" id="progressSteps"></div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Screen 1: Intro -->
+  <div id="screen1" class="screen fade-in">
+    <div class="intro-hero">
+      <div class="intro-badge">2026 AX READINESS DIAGNOSTIC</div>
+      <h1 class="intro-title">우리 조직의<br><span class="hl">AI·AX 도입 준비도</span>를<br>진단합니다</h1>
+      <p class="intro-sub">단순한 AI 도구 도입이 아닌, 교육 설계·거버넌스·조직 변화·업무 전환 관점에서 조직의 AX 성숙도를 측정하고 맞춤 실행 로드맵을 제안합니다.</p>
+      <button class="btn btn-white btn-lg" onclick="goToScreen(2)">진단 시작하기 &rarr;</button>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:16px">이 진단 도구는</div>
+      <div class="intro-features">
+        <div class="feature-card">
+          <div class="feature-icon blue">A</div>
+          <div><div class="feature-title">전략·리더십</div><div class="feature-desc">경영진의 AI 전략 의지와 자원 배분 준비도를 점검합니다</div></div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">B</div>
+          <div><div class="feature-title">교육·역량</div><div class="feature-desc">전 직원 AI 리터러시와 직무별 교육 체계를 확인합니다</div></div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon orange">C</div>
+          <div><div class="feature-title">도구·인프라</div><div class="feature-desc">승인된 AI 도구와 보안·데이터 정책 현황을 파악합니다</div></div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon green">D</div>
+          <div><div class="feature-title">성과·문화</div><div class="feature-desc">AI 활용 성과와 조직 문화 전환 수준을 측정합니다</div></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:16px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-600);line-height:1.7">
+        <strong style="color:var(--navy)">20문항 · 약 5~7분 소요</strong><br>
+        모든 데이터는 브라우저에만 저장되며 외부로 전송되지 않습니다. 개인정보를 수집하지 않습니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Basic Info -->
+  <div id="screen2" class="screen hidden">
+    <div class="card fade-in">
+      <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px">기본 정보</div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:24px">결과에 맞춤 권고안을 제공하기 위한 최소 정보입니다.</p>
+
+      <div class="form-group">
+        <label class="form-label">조직 규모 <span style="color:var(--danger);font-size:11px">*필수</span></label>
+        <div class="radio-group" id="sizeGroup">
+          <label class="radio-option" data-value="small">
+            <input type="radio" name="orgSize" value="small">
+            <div class="radio-dot"></div>
+            <div><div class="radio-text">50인 미만</div><div class="radio-sub">소규모 조직, 빠른 의사결정</div></div>
+          </label>
+          <label class="radio-option" data-value="medium">
+            <input type="radio" name="orgSize" value="medium">
+            <div class="radio-dot"></div>
+            <div><div class="radio-text">50~300인</div><div class="radio-sub">중규모 조직, 부서별 체계화 단계</div></div>
+          </label>
+          <label class="radio-option" data-value="large">
+            <input type="radio" name="orgSize" value="large">
+            <div class="radio-dot"></div>
+            <div><div class="radio-text">300인 이상</div><div class="radio-sub">대규모 조직, 전사적 전략 필요</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">산업 분야<span class="optional">선택</span></label>
+        <select class="form-input" id="industry">
+          <option value="">선택하지 않음</option>
+          <option value="제조">제조</option>
+          <option value="금융">금융·보험</option>
+          <option value="IT">IT·소프트웨어</option>
+          <option value="유통">유통·서비스</option>
+          <option value="의료">의료·바이오</option>
+          <option value="교육">교육</option>
+          <option value="공공">공공·공기업</option>
+          <option value="건설">건설·부동산</option>
+          <option value="미디어">미디어·콘텐츠</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">이름<span class="optional">선택</span></label>
+        <input class="form-input" type="text" id="userName" placeholder="예: 홍길동">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">회사명<span class="optional">선택</span></label>
+        <input class="form-input" type="text" id="companyName" placeholder="예: ABC 주식회사">
+      </div>
+
+      <div id="infoValidation" class="validation-msg">조직 규모를 선택해 주세요.</div>
+
+      <div class="question-nav">
+        <button class="btn btn-secondary btn-sm" onclick="goToScreen(1)">&larr; 이전</button>
+        <button class="btn btn-primary" onclick="validateInfo()">진단 시작 &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Questions -->
+  <div id="screen3" class="screen hidden"></div>
+
+  <!-- Screen 4: Results -->
+  <div id="screen4" class="screen hidden"></div>
+</div>
+
+<!-- Sample Preview Button -->
+<button class="sample-btn no-print" id="sampleBtn" onclick="loadSampleAndShow()">샘플 결과 미리보기</button>
+
+<script>
+/* ================================================================
+   DATA MODEL
+   ================================================================ */
+const SECTIONS = [
+  { key:'A', name:'전략·리더십', color:'#2563eb', cssClass:'a',
+    questions:[
+      '경영진이 AI를 전사 전략 의제로 공식 언급하고, 이에 대한 자원 배분 의사가 있다',
+      'AI 도입·활용에 대한 전사 수준의 방향성(로드맵, 계획 등)이 존재한다',
+      'AI 관련 의사결정 구조(전담 팀, 위원회, 협의체 등)가 있다',
+      'AI 교육·역량 강화에 대한 별도 예산이 배정되어 있다',
+      'AI 기본법 등 관련 법규의 영향을 검토한 적이 있다'
+    ]},
+  { key:'B', name:'교육·역량', color:'#7c3aed', cssClass:'b',
+    questions:[
+      '전 직원 대상 AI 리터러시 교육을 1회 이상 실시했다',
+      '역할·직무별로 차별화된 AI 교육 과정이 설계되어 있다',
+      'AI 교육 성과를 측정하는 지표가 수료율·만족도 외에도 있다',
+      '직원이 AI 도구를 안전하게 사용할 수 있는 가이드라인이 존재한다',
+      'AI 활용 사례를 사내에서 공유·확산하는 채널이 있다'
+    ]},
+  { key:'C', name:'도구·인프라', color:'#d97706', cssClass:'c',
+    questions:[
+      '업무에 사용할 수 있도록 승인된 AI 도구가 있다',
+      'AI 도구 사용에 관한 보안·데이터 정책이 문서화되어 있다',
+      'AI 도구의 사용 현황(사용률, 주요 용도)을 추적하고 있다',
+      '사내 데이터와 AI를 연결하는 시스템(RAG, 사내 챗봇 등)이 있다',
+      '비공식 AI 도구 사용(섀도우 AI)의 현황을 파악하고 있다'
+    ]},
+  { key:'D', name:'성과·문화', color:'#059669', cssClass:'d',
+    questions:[
+      'AI를 활용하여 업무 효율이 개선된 구체적 사례가 1건 이상 있다',
+      'AI 활용이 성과 평가·목표 설정에 어떤 형태로든 반영되고 있다',
+      '직원 다수가 AI를 위협보다 기회로 인식하고 있다',
+      'AI를 활용한 업무 프로세스 재설계가 1건 이상 완료됐다',
+      'AI 관련 실험·실패에 대해 허용적인 분위기가 있다'
+    ]}
+];
+
+const SCORE_OPTIONS = [
+  { value:0, label:'없음', sub:'한 적 없음' },
+  { value:1, label:'일부', sub:'비공식적 존재' },
+  { value:2, label:'제도화', sub:'문서화·운영 중' }
+];
+
+/* 레벨 판정을 위한 데이터 */
+const LEVELS = [
+  { level:5, name:'AI 네이티브', range:[36,40],
+    gate: s => s.A>=7 && s.B>=7 && s.C>=7 && s.D>=7,
+    gateDesc:'전 영역(A, B, C, D) 각각 7점 이상',
+    desc:'전 영역이 균형 있게 성숙한 단계입니다. AI가 조직 운영의 핵심 신경망으로 작동하며, 에이전틱 AI 시대를 선도할 준비가 되어 있습니다.' },
+  { level:4, name:'최적화', range:[29,35],
+    gate: s => s.D>=6,
+    gateDesc:'D(성과·문화) 6점 이상',
+    desc:'AI 활용의 실제 성과가 나타나고 있으며, 조직 문화로 정착되고 있는 단계입니다. ROI 고도화와 문화 내재화에 집중할 시점입니다.' },
+  { level:3, name:'확산', range:[19,28],
+    gate: s => s.A>=6 && s.B>=5 && s.C>=5,
+    gateDesc:'A(전략·리더십) 6점 이상, B(교육·역량)·C(도구·인프라) 각 5점 이상',
+    desc:'전사 전략과 교육·도구 체계가 갖춰지기 시작한 단계입니다. 직무별 AX 설계와 거버넌스 체계를 본격화해야 합니다.' },
+  { level:2, name:'실험', range:[11,18],
+    gate: s => s.A>=4,
+    gateDesc:'A(전략·리더십) 4점 이상',
+    desc:'부분적으로 AI 활용을 시도하고 있으며, 최소한의 리더십 기반이 확보된 단계입니다. 파일럿을 설계하고 공식 운영 구조를 만들어야 합니다.' },
+  { level:1, name:'인식', range:[0,10],
+    gate: ()=>true,
+    gateDesc:'조건 없음',
+    desc:'AI에 대한 관심은 있으나 체계적 준비가 아직 이루어지지 않은 단계입니다. 전사 공감대 형성과 최소한의 AI 리터러시 확보부터 시작해야 합니다.' }
+];
+
+/* 불균형 해석 */
+const WEAKNESS_MSG = {
+  A:'현장 의지는 있으나 경영진 지지와 방향성이 약합니다. 경영진 브리핑, AI 전략 워크숍, 예산·의사결정 구조 확보가 우선입니다.',
+  B:'도구보다 사람이 뒤처진 상태입니다. 전 직원 AI 리터러시 교육과 직무별 학습 경로 설계가 우선입니다.',
+  C:'교육 의지는 있으나 실무 적용 인프라가 약합니다. 승인 도구 선정, 보안 가이드, 사용 현황 추적 체계 구축이 필요합니다.',
+  D:'도입은 시작됐지만 성과와 문화 전환으로 이어지지 않았습니다. 유즈케이스 축적, KPI 설계, 사례 공유 구조가 필요합니다.'
+};
+
+/* 레벨별 로드맵 메시지 */
+const ROADMAP_MSG = {
+  1:'지금은 인식 단계입니다. 전사 공감대와 최소한의 AI 리터러시 확보부터 시작해야 합니다.',
+  2:'실험은 시작됐지만 체계가 약합니다. 파일럿을 설계하고 공식 운영 구조를 만들어야 합니다.',
+  3:'확산 가능한 기반이 보입니다. 직무별 AX 설계와 거버넌스 체계를 본격화해야 합니다.',
+  4:'성과가 나타나고 있습니다. 이제는 문화 내재화와 ROI 고도화가 핵심입니다.',
+  5:'상당히 성숙한 단계입니다. 에이전트 시대를 대비한 역할 재설계와 고도화 전략이 필요합니다.'
+};
+
+/* 레벨별 우선과제 */
+const PRIORITIES = {
+  1:[
+    {title:'경영진 AI 전략 브리핑 실시', desc:'글로벌 사례와 AI 기본법 시행 현황을 공유하고, 전사 AI 방향성에 대한 최소한의 합의를 이끌어 내십시오.'},
+    {title:'전 직원 AI 기초 리터러시 교육', desc:'AI가 무엇인지, 무엇을 할 수 있고 없는지, 결과를 어떻게 검증하는지를 전 직원이 공유해야 합니다.'},
+    {title:'AI 사용 가이드라인 초안 수립', desc:'직원이 AI 도구를 안전하게 실험할 수 있는 최소한의 원칙을 문서화하십시오.'}
+  ],
+  2:[
+    {title:'AI 파일럿 부서 선정 및 PoC 설계', desc:'반복 업무 비중이 높고 성과 측정이 용이한 부서를 선택해, 1~3건의 유즈케이스를 만드십시오.'},
+    {title:'AI 도구 보안·데이터 정책 공식화', desc:'승인된 AI 도구 목록과 보안 가이드라인을 문서화하여 섀도우 AI 리스크를 관리하십시오.'},
+    {title:'직무별 차별화 교육 과정 설계 착수', desc:'임원·중간관리자·실무자별로 학습 목표와 형태를 분리 설계하십시오.'}
+  ],
+  3:[
+    {title:'전사 AI 거버넌스 체계 수립', desc:'AI 기본법 고영향 AI 대응을 포함한 거버넌스 위원회를 구성하고, 채용·평가 영역부터 점검하십시오.'},
+    {title:'성과 측정 KPI 체계 도입', desc:'AI 활용 건수, 업무 시간 절감, 산출물 품질 변화 등을 정량적으로 추적하는 체계를 구축하십시오.'},
+    {title:'AI 챔피언 양성 프로그램 시작', desc:'각 부서에서 AI 확산을 주도할 핵심 인재를 선발하고, 심화 교육·멘토링을 제공하십시오.'}
+  ],
+  4:[
+    {title:'워크플로우 재설계 확대', desc:'AI를 기존 프로세스 위에 얹는 것이 아니라, 업무 프로세스 자체를 AI 중심으로 재설계하십시오.'},
+    {title:'AI ROI 측정 및 경영진 보고 체계화', desc:'AI 투자 대비 EBIT 기여도를 정량화하여, 투자 확대를 정당화할 수 있는 근거를 확보하십시오.'},
+    {title:'조직 문화 내재화 강화', desc:'AI 활용 사례 공유 채널, 실험·실패 허용 문화, 데이터 기반 의사결정 습관을 정착시키십시오.'}
+  ],
+  5:[
+    {title:'에이전틱 AI 도입 로드맵 수립', desc:'인간+에이전트 협업 환경을 설계하고, 역할 재분배 계획을 수립하십시오.'},
+    {title:'스킬 기반 인재 관리 전환', desc:'직무 중심에서 스킬 중심으로 채용·평가·이동 체계를 전환하십시오.'},
+    {title:'AI 거버넌스 고도화 및 외부 벤치마크', desc:'글로벌 수준의 AI 윤리·공정성 체계를 구축하고, 산업 리더십을 확보하십시오.'}
+  ]
+};
+
+/* 조직 규모별 권고 */
+const SIZE_REC = {
+  small:{
+    title:'50인 미만 조직 맞춤 권고',
+    items:[
+      '작은 성공부터 시작하십시오. 1개 업무의 AI 활용 PoC로 Quick Win을 확보하세요.',
+      'AI 내장형 SaaS 도구(예: 문서 작성, 고객 응대, 데이터 분석)를 우선 검토하십시오.',
+      '내부 AI 매니저 1명을 선정·육성하여 조직의 AI 리터러시를 견인하게 하십시오.',
+      '정부 지원(K-디지털 크레딧 등)을 적극 활용해 교육 비용 부담을 줄이십시오.',
+      '큰 투자보다 빠른 실험과 학습 사이클이 소규모 조직의 강점입니다.'
+    ]
+  },
+  medium:{
+    title:'50~300인 조직 맞춤 권고',
+    items:[
+      '직무별 AI 역량 체계를 수립하고, 3~5개 부서에서 동시 PoC를 설계하십시오.',
+      'IT-HR 공동 교육 체계를 구축하여 기술 도입과 역량 교육을 연동하십시오.',
+      '레거시 시스템과 AI 도구의 연동 가능성을 사전에 점검하십시오.',
+      '내부 AI 코치(파워 유저)를 양성하여 부서별 확산을 가속화하십시오.',
+      'AI 기본법 고영향 AI 해당 여부를 법무팀과 함께 검토하십시오.'
+    ]
+  },
+  large:{
+    title:'300인 이상 조직 맞춤 권고',
+    items:[
+      '전사 AI 리터러시 교육과 전문 트랙(경영진/HR/전사/AI 챔피언)을 분리 운영하십시오.',
+      'Internal AI Marketplace 개념을 도입하여 승인된 도구·유즈케이스를 중앙에서 관리하십시오.',
+      'AI 거버넌스 위원회를 공식 설치하고, 채용·평가·보상 영역의 AI 공정성을 모니터링하십시오.',
+      'ROI 측정 체계를 KPI에 반영하고, AI 성과를 경영진 보고에 정례화하십시오.',
+      '에이전틱 AI 시대를 대비한 직무 재설계와 스킬 기반 관리 전환을 착수하십시오.'
+    ]
+  }
+};
+
+/* 레벨별 타임라인 */
+const TIMELINES = {
+  1:[
+    {period:'1~3개월', text:'경영진 브리핑 1회 실시. 전 직원 기초 AI 리터러시 교육(온라인, 4~8시간) 도입. AI 사용 가이드라인 초안 작성.'},
+    {period:'4~6개월', text:'파일럿 부서 1개 선정. AI 도구 1~2개 승인 배포. 유즈케이스 1건 이상 확보.'},
+    {period:'7~12개월', text:'교육 성과 1차 측정. 파일럿 결과를 경영진에 보고하고 확산 여부 판단. AI 교육 예산 공식 편성.'}
+  ],
+  2:[
+    {period:'1~3개월', text:'AI 보안·데이터 정책 문서화. 파일럿 부서 2~3개에서 PoC 설계. 직무별 교육 커리큘럼 설계 착수.'},
+    {period:'4~6개월', text:'파일럿 실행 및 유즈케이스 3건 이상 확보. AI 챔피언 후보 선발. 교육 성과 측정 지표 도입.'},
+    {period:'7~12개월', text:'파일럿 성과 기반 전사 확산 계획 수립. AI 거버넌스 체계 초안 마련. 섀도우 AI 현황 1차 점검.'}
+  ],
+  3:[
+    {period:'1~3개월', text:'AI 거버넌스 위원회 구성. AI 기본법 고영향 AI 해당 여부 법률 검토. AI 챔피언 심화 교육 개시.'},
+    {period:'4~6개월', text:'워크플로우 재설계 1~2건 착수. AI 성과 KPI 체계 도입. 사내 AI 사례 공유 채널 공식화.'},
+    {period:'7~12개월', text:'전사 AI 성과 종합 보고. 스킬 기반 관리 요소 도입 검토. 에이전틱 AI 파일럿 탐색.'}
+  ],
+  4:[
+    {period:'1~3개월', text:'워크플로우 재설계 확대(3~5건). AI ROI 정량화 및 경영진 정례 보고 체계 수립.'},
+    {period:'4~6개월', text:'스킬 기반 채용·평가 요소 도입. AI 거버넌스 고도화(공정성 모니터링). 에이전틱 AI PoC 시작.'},
+    {period:'7~12개월', text:'인간+에이전트 협업 팀 실험. AI 문화 정착 수준 전사 서베이. 글로벌 벤치마크 대비 성숙도 재진단.'}
+  ],
+  5:[
+    {period:'1~3개월', text:'에이전틱 AI 전략 로드맵 수립. 직무 재설계(인간 vs 에이전트 역할 구분) 본격 착수.'},
+    {period:'4~6개월', text:'에이전트 성과 관리 체계 구축. 스킬 기반 인재 관리 전환 가속화. AI-free 스킬 평가 도입 검토.'},
+    {period:'7~12개월', text:'인간+에이전트 협업 조직 모델 안정화. HR의 "설계 부서" 역할 확립. 산업 AI 리더십 확보.'}
+  ]
+};
+
+/* ================================================================
+   STATE MANAGEMENT
+   ================================================================ */
+let state = {
+  currentScreen: 1,
+  orgSize: '',
+  industry: '',
+  userName: '',
+  companyName: '',
+  answers: {} // key: "q0" ~ "q19", value: 0|1|2
+};
+
+/* localStorage 저장/복원 */
+function saveState(){
+  try{ localStorage.setItem('ax_diag_state', JSON.stringify(state)); }catch(e){}
+}
+function loadState(){
+  try{
+    const s = localStorage.getItem('ax_diag_state');
+    if(s){ state = JSON.parse(s); return true; }
+  }catch(e){}
+  return false;
+}
+
+/* ================================================================
+   SCORE CALCULATION
+   ================================================================ */
+
+/** 영역별 점수 계산 */
+function calcSectionScores(){
+  const scores = {};
+  let qIdx = 0;
+  SECTIONS.forEach(sec => {
+    let sum = 0;
+    sec.questions.forEach((_, i) => {
+      const v = state.answers['q'+qIdx];
+      sum += (typeof v === 'number') ? v : 0;
+      qIdx++;
+    });
+    scores[sec.key] = sum;
+  });
+  return scores;
+}
+
+/** 총점 */
+function calcTotal(scores){
+  return Object.values(scores).reduce((a,b)=>a+b, 0);
+}
+
+/** 레벨 판정 — 총점 + 게이트 조건 */
+function determineLevel(scores, total){
+  for(const lv of LEVELS){
+    if(total >= lv.range[0] && total <= lv.range[1]){
+      if(lv.gate(scores)) return lv;
+      // 게이트 미충족 → 하위 레벨로
+    }
+  }
+  // 총점이 상위 레벨 범위이지만 게이트 미충족 시, 한 단계씩 내려감
+  for(let i=0; i<LEVELS.length; i++){
+    const lv = LEVELS[i];
+    if(total >= lv.range[0] && total <= lv.range[1] && lv.gate(scores)) return lv;
+  }
+  // fallback: 게이트를 충족하는 가장 높은 레벨 찾기
+  for(const lv of LEVELS){
+    if(total >= lv.range[0] && lv.gate(scores)) return lv;
+  }
+  return LEVELS[LEVELS.length-1]; // Level 1
+}
+
+/** 게이트 충족 여부를 모든 레벨에 대해 반환 */
+function checkAllGates(scores, total){
+  return LEVELS.map(lv => ({
+    level: lv.level,
+    name: lv.name,
+    inRange: total >= lv.range[0] && total <= lv.range[1],
+    gateMet: lv.gate(scores),
+    gateDesc: lv.gateDesc
+  }));
+}
+
+/** 최약 영역 찾기 */
+function findWeakest(scores){
+  let minKey = 'A', minVal = 10;
+  for(const k of ['A','B','C','D']){
+    if(scores[k] < minVal){ minVal = scores[k]; minKey = k; }
+  }
+  return minKey;
+}
+
+/* ================================================================
+   UI RENDERING
+   ================================================================ */
+
+const STEP_LABELS = ['소개','기본 정보','진단','결과'];
+
+function renderProgress(){
+  const wrapper = document.getElementById('progressSteps');
+  wrapper.innerHTML = '';
+  STEP_LABELS.forEach((label, i) => {
+    const step = i + 1;
+    const isDone = state.currentScreen > step;
+    const isActive = state.currentScreen === step;
+    const div = document.createElement('div');
+    div.className = 'progress-step';
+    div.innerHTML = `
+      <div class="step-dot ${isActive?'active':''} ${isDone?'done':''}">${isDone?'&#10003;':step}</div>
+      <div class="step-label ${isActive?'active':''} ${isDone?'done':''}">${label}</div>
+      ${i < STEP_LABELS.length-1 ? `<div class="step-connector ${isDone?'done':''}"></div>` : ''}
+    `;
+    wrapper.appendChild(div);
+  });
+  // progress bar
+  const pcts = [0, 10, 25, 100];
+  let pct = pcts[state.currentScreen - 1] || 0;
+  if(state.currentScreen === 3){
+    const answered = Object.keys(state.answers).length;
+    pct = 25 + (answered / 20) * 65;
+  }
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function goToScreen(n){
+  state.currentScreen = n;
+  saveState();
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  const screen = document.getElementById('screen' + n);
+  if(n === 3) renderQuestions();
+  if(n === 4) renderResults();
+  screen.classList.remove('hidden');
+  screen.classList.add('fade-in');
+  renderProgress();
+  window.scrollTo({top:0, behavior:'smooth'});
+  // hide sample btn on results
+  document.getElementById('sampleBtn').style.display = (n===4)?'none':'block';
+}
+
+function validateInfo(){
+  if(!state.orgSize){
+    document.getElementById('infoValidation').classList.add('show');
+    return;
+  }
+  document.getElementById('infoValidation').classList.remove('show');
+  state.industry = document.getElementById('industry').value;
+  state.userName = document.getElementById('userName').value;
+  state.companyName = document.getElementById('companyName').value;
+  saveState();
+  goToScreen(3);
+}
+
+/* --- Screen 2 radio binding --- */
+function initInfoScreen(){
+  document.querySelectorAll('#sizeGroup .radio-option').forEach(opt => {
+    if(opt.dataset.value === state.orgSize) opt.classList.add('selected');
+    opt.addEventListener('click', function(){
+      document.querySelectorAll('#sizeGroup .radio-option').forEach(o=>o.classList.remove('selected'));
+      this.classList.add('selected');
+      state.orgSize = this.dataset.value;
+      this.querySelector('input').checked = true;
+      document.getElementById('infoValidation').classList.remove('show');
+      saveState();
+    });
+  });
+  if(state.industry) document.getElementById('industry').value = state.industry;
+  if(state.userName) document.getElementById('userName').value = state.userName;
+  if(state.companyName) document.getElementById('companyName').value = state.companyName;
+}
+
+/* --- Screen 3: Questions --- */
+function renderQuestions(){
+  const container = document.getElementById('screen3');
+  let html = '';
+  let qIdx = 0;
+  SECTIONS.forEach(sec => {
+    html += `<div class="card fade-in">
+      <div class="section-header">
+        <div class="section-badge ${sec.cssClass}">${sec.key}</div>
+        <div>
+          <div class="section-title">${sec.name}</div>
+          <div class="section-subtitle">5문항 · 각 0~2점 · ${sec.key}영역 10점 만점</div>
+        </div>
+      </div>`;
+    sec.questions.forEach((q, i) => {
+      const qi = qIdx;
+      const selected = state.answers['q'+qi];
+      html += `<div class="question-item">
+        <div class="question-number">${sec.key}${i+1}. 문항 ${qIdx+1}/20</div>
+        <div class="question-text">${q}</div>
+        <div class="score-options">`;
+      SCORE_OPTIONS.forEach(opt => {
+        const sel = selected === opt.value ? 'selected' : '';
+        html += `<div class="score-btn ${sel}" data-q="q${qi}" data-v="${opt.value}" onclick="selectAnswer(this,'q${qi}',${opt.value})">
+          <span class="score-val">${opt.value}</span>
+          <span class="score-label">${opt.label}</span>
+        </div>`;
+      });
+      html += `</div></div>`;
+      qIdx++;
+    });
+    html += `</div>`;
+  });
+
+  html += `<div id="qValidation" class="validation-msg" style="margin-bottom:16px">모든 문항에 응답해 주세요. 미응답 문항이 있습니다.</div>`;
+  html += `<div class="question-nav" style="margin-bottom:32px">
+    <button class="btn btn-secondary btn-sm" onclick="goToScreen(2)">&larr; 기본 정보</button>
+    <div class="q-counter"><span id="answeredCount">${Object.keys(state.answers).length}</span>/20 응답 완료</div>
+    <button class="btn btn-primary" onclick="submitDiagnosis()">결과 보기 &rarr;</button>
+  </div>`;
+  container.innerHTML = html;
+}
+
+function selectAnswer(el, qKey, val){
+  state.answers[qKey] = val;
+  saveState();
+  // UI update
+  el.parentElement.querySelectorAll('.score-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  // counter
+  const cnt = Object.keys(state.answers).length;
+  const counter = document.getElementById('answeredCount');
+  if(counter) counter.textContent = cnt;
+  renderProgress();
+}
+
+function submitDiagnosis(){
+  if(Object.keys(state.answers).length < 20){
+    document.getElementById('qValidation').classList.add('show');
+    // scroll to first unanswered
+    for(let i=0;i<20;i++){
+      if(state.answers['q'+i] === undefined){
+        const btns = document.querySelectorAll(`[data-q="q${i}"]`);
+        if(btns.length) btns[0].scrollIntoView({behavior:'smooth', block:'center'});
+        break;
+      }
+    }
+    return;
+  }
+  document.getElementById('qValidation').classList.remove('show');
+  goToScreen(4);
+}
+
+/* --- Screen 4: Results --- */
+function renderResults(){
+  const scores = calcSectionScores();
+  const total = calcTotal(scores);
+  const result = determineLevel(scores, total);
+  const weakest = findWeakest(scores);
+  const gates = checkAllGates(scores, total);
+  const level = result.level;
+  const size = state.orgSize || 'medium';
+
+  const container = document.getElementById('screen4');
+  let h = '';
+
+  /* 결과 히어로 */
+  h += `<div class="result-hero fade-in">
+    <div class="result-level-badge">LEVEL ${level} / 5</div>
+    <div class="result-level-name">${result.name} 단계</div>
+    <div class="result-level-desc">${state.companyName ? state.companyName + '는' : '귀사는'} 현재 AI·AX 도입의 <strong>'${result.name} 단계'</strong>에 있습니다.</div>
+  </div>`;
+
+  /* 총점 게이지 + 영역 점수 */
+  h += `<div class="card card-elevated fade-in">
+    <div class="gauge-wrapper">
+      ${renderGaugeSVG(total)}
+      <div class="gauge-label">총점</div>
+    </div>
+    <div class="score-overview">
+      ${['A','B','C','D'].map((k,i) => {
+        const sec = SECTIONS[i];
+        return `<div class="score-card ${sec.cssClass}">
+          <div class="score-card-label">${sec.key}. ${sec.name}</div>
+          <div class="score-card-value">${scores[k]}<span class="score-card-max"> /10</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <!-- Bar chart -->
+    <div class="bar-chart">
+      ${SECTIONS.map(sec => {
+        const pct = scores[sec.key] / 10 * 100;
+        return `<div class="bar-row">
+          <div class="bar-label">${sec.key}. ${sec.name}</div>
+          <div class="bar-track"><div class="bar-fill ${sec.cssClass}" style="width:${pct}%"><span>${scores[sec.key]}/10</span></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <!-- Radar -->
+    <div class="radar-wrapper">${renderRadarSVG(scores)}</div>
+  </div>`;
+
+  /* Block 1: 종합 진단 요약 */
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">1</div>
+      <div class="result-block-title">종합 진단 요약</div>
+    </div>
+    <div class="callout callout-navy" style="font-size:15px;line-height:1.8">
+      ${state.companyName ? '<strong>'+esc(state.companyName)+'</strong>는' : '귀사는'} 현재 AI·AX 도입의 <strong>'${result.name} 단계(Level ${level})'</strong>에 있습니다.<br>
+      ${ROADMAP_MSG[level]}
+    </div>
+  </div>`;
+
+  /* Block 2: 왜 이런 결과가 나왔는가 */
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">2</div>
+      <div class="result-block-title">왜 이런 결과가 나왔는가</div>
+    </div>
+    <p style="font-size:14px;margin-bottom:16px;color:var(--gray-600)">총점 <strong style="font-size:18px;color:var(--navy)">${total}점</strong> / 40점 만점&emsp;|&emsp;최종 레벨: <strong style="color:var(--navy)">Level ${level} — ${result.name}</strong></p>
+
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px">게이트 조건 충족 여부</div>
+    <div class="gate-section">`;
+
+  // 현재 레벨과 바로 위 레벨의 게이트만 보여주기
+  const relevantLevels = gates.filter(g => g.level <= level + 1 && g.level >= level);
+  relevantLevels.sort((a,b)=>a.level-b.level);
+  relevantLevels.forEach(g => {
+    const pass = g.gateMet && total >= LEVELS.find(l=>l.level===g.level).range[0];
+    h += `<div class="gate-item ${pass?'pass':'fail'}">
+      <div class="gate-icon">${pass?'&#10003;':'&#10007;'}</div>
+      <div class="gate-text">Level ${g.level}(${g.name}): ${g.gateDesc} — ${pass?'충족':'미충족'}</div>
+    </div>`;
+  });
+
+  /* 게이트 미충족으로 레벨이 낮아진 경우 설명 */
+  const naturalLevel = LEVELS.find(lv => total >= lv.range[0] && total <= lv.range[1]);
+  if(naturalLevel && naturalLevel.level > level){
+    h += `<div class="callout callout-warn" style="font-size:13px;margin-top:12px">
+      <strong>참고:</strong> 총점(${total}점)만으로는 Level ${naturalLevel.level}(${naturalLevel.name}) 범위이나, 게이트 조건 미충족으로 Level ${level}(${result.name})으로 판정되었습니다. 특정 영역의 균형 있는 성장이 필요합니다.
+    </div>`;
+  }
+
+  h += `</div>
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin:16px 0 8px">최우선 개선 영역: ${weakest}. ${SECTIONS.find(s=>s.key===weakest).name} (${scores[weakest]}점/10점)</div>
+    <div class="callout callout-blue" style="font-size:14px;line-height:1.7">${WEAKNESS_MSG[weakest]}</div>
+  </div>`;
+
+  /* Block 3: 지금 가장 먼저 해야 할 일 */
+  const prios = PRIORITIES[level];
+  const timeline = TIMELINES[level];
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">3</div>
+      <div class="result-block-title">지금 가장 먼저 해야 할 일</div>
+    </div>
+    ${prios.map((p,i)=>`<div class="priority-item">
+      <div class="priority-num">${i+1}</div>
+      <div class="priority-text"><strong>${p.title}</strong><br>${p.desc}</div>
+    </div>`).join('')}
+
+    <div style="font-size:15px;font-weight:800;color:var(--navy);margin:24px 0 12px">실행 로드맵</div>
+    ${timeline.map(t=>`<div class="timeline-item">
+      <div class="timeline-period">${t.period}</div>
+      <div class="timeline-content">${t.text}</div>
+    </div>`).join('')}
+  </div>`;
+
+  /* Block 4: 조직 규모별 맞춤 권고 */
+  const rec = SIZE_REC[size];
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">4</div>
+      <div class="result-block-title">${rec.title}</div>
+    </div>
+    <ul style="list-style:none;padding:0">
+      ${rec.items.map(item=>`<li style="padding:10px 0;border-bottom:1px solid var(--gray-100);font-size:14px;line-height:1.7;display:flex;gap:8px"><span style="color:var(--primary);font-weight:700;flex-shrink:0">&#9656;</span>${item}</li>`).join('')}
+    </ul>
+  </div>`;
+
+  /* Block 5: 경영진 보고용 메시지 */
+  const execMsg = generateExecMessage(scores, total, level, result, weakest, size);
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">5</div>
+      <div class="result-block-title">경영진 보고용 메시지</div>
+    </div>
+    <div class="callout callout-navy" style="font-size:15px;line-height:2">${execMsg}</div>
+  </div>`;
+
+  /* Block 6: 미래 준비 관점 */
+  h += `<div class="card fade-in result-block">
+    <div class="result-block-header">
+      <div class="result-block-number">6</div>
+      <div class="result-block-title">미래 준비 관점 — 에이전트 시대와 HR의 새로운 역할</div>
+    </div>
+    <div style="font-size:14px;line-height:1.8;color:var(--gray-700)">
+      <p style="margin-bottom:12px"><strong style="color:var(--navy)">에이전틱 AI가 바꾸는 조직의 미래</strong><br>
+      2028년까지 기업용 소프트웨어의 33%가 에이전틱 AI를 포함할 것으로 전망됩니다(Gartner). 대기업의 48%는 이미 에이전틱 AI를 사용 중이며, CHRO들은 에이전트 도입의 327% 성장을 전망하고 있습니다(ADP). 그러나 Gartner는 에이전틱 AI 프로젝트의 40% 이상이 거버넌스 부재로 취소될 것이라고도 경고합니다.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--navy)">HR은 운영 부서가 아니라 설계 부서입니다</strong><br>
+      에이전트 시대에는 직무 정의, 스킬 기준, 평가 방식, 학습 구조, 거버넌스가 동시에 재설계되어야 합니다. 이 다섯 가지는 모두 HR의 전통적 영역입니다. HR이 전략적 기능으로 격상되는 것은 위협이 아니라 기회입니다.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--navy)">지금의 교육 투자는 미래에도 유효합니다</strong><br>
+      AI 리터러시, 데이터 기반 사고, 비판적 사고, 프롬프트 설계 역량은 도구가 바뀌어도 이전 가능한 범용 역량입니다. 기술 중심으로만 AI를 도입한 조직은 인간 중심 접근 조직보다 기대 수익 미달 가능성이 1.6배 높습니다(Deloitte). AI 교육은 단지 AI를 쓰는 법이 아니라, <strong>AI 결과를 검증하고 인간의 판단을 강화하는 역량</strong>을 키우는 것입니다.</p>
+      <p><strong style="color:var(--navy)">2026년은 한국 기업 HR에게 결정적 시점입니다</strong><br>
+      AI 기본법 시행, 정부의 적극적 정책 지원, K-디지털 크레딧 교육 예산 확대가 동시에 진행되는 지금이 체계적 AX 교육 투자를 시작하기에 가장 적합한 시점입니다.</p>
+    </div>
+  </div>`;
+
+  /* Actions */
+  h += `<div class="actions-bar no-print">
+    <button class="btn btn-primary btn-sm" onclick="copyResult()">&#128203; 결과 복사</button>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">&#128424; 인쇄 / PDF</button>
+    <button class="btn btn-outline btn-sm" onclick="exportHTML()">&#128229; HTML 내보내기</button>
+    <button class="btn btn-secondary btn-sm" onclick="resetAll()">&#8635; 다시 진단하기</button>
+  </div>`;
+
+  h += `<div class="app-footer">
+    <p>본 진단 도구는 "HR 담당자를 위한 AI·AX 도입 전략 백서 2026"을 기반으로 제작되었습니다.</p>
+    <p>McKinsey State of AI 2025 · WEF Future of Jobs 2025 · AI 기본법(2026.01.22 시행) 등의 데이터를 참고합니다.</p>
+    <p style="margin-top:8px">진단일: ${new Date().toLocaleDateString('ko-KR')}</p>
+  </div>`;
+
+  container.innerHTML = h;
+}
+
+/* 경영진 보고 메시지 생성 */
+function generateExecMessage(scores, total, level, result, weakest, size){
+  const company = state.companyName ? esc(state.companyName) : '우리 조직';
+  const weakName = SECTIONS.find(s=>s.key===weakest).name;
+  let msg = '';
+  if(level <= 2){
+    msg = `<strong>${company}</strong>의 AI·AX 준비도는 40점 만점 중 <strong>${total}점</strong>으로, '${result.name} 단계'입니다. `;
+    msg += `McKinsey에 따르면 글로벌 기업의 88%가 이미 AI를 사용하고 있으며, 도입 자체는 차별화 요소가 아닙니다. `;
+    msg += `가장 시급한 과제는 <strong>${weakName}</strong> 영역의 보강이며, AI 기본법 시행에 대비한 체계적 교육 투자가 필요합니다.`;
+  } else if(level === 3){
+    msg = `<strong>${company}</strong>은(는) ${total}점(40점 만점)으로 '${result.name} 단계'에 진입했습니다. `;
+    msg += `확산 가능한 기반이 갖춰지고 있으나, <strong>${weakName}</strong> 영역의 추가 강화가 필요합니다. `;
+    msg += `지금은 직무별 AX 설계와 거버넌스를 본격화하여, AI 고성과 기업 6%에 합류할 수 있는 결정적 시점입니다.`;
+  } else if(level === 4){
+    msg = `<strong>${company}</strong>은(는) ${total}점(40점 만점)으로 '${result.name} 단계'에 도달했습니다. `;
+    msg += `AI 활용 성과가 나타나고 있으며, 이를 문화로 내재화하고 ROI를 고도화할 시점입니다. `;
+    msg += `에이전틱 AI 시대를 대비한 워크플로우 재설계와 스킬 기반 인재 관리 전환을 준비하십시오.`;
+  } else {
+    msg = `<strong>${company}</strong>은(는) ${total}점(40점 만점)으로 '${result.name} 단계'입니다. `;
+    msg += `전 영역이 균형 있게 성숙해 있으며, 에이전트 시대를 선도할 위치에 있습니다. `;
+    msg += `HR을 '설계 부서'로 격상하고, 인간+에이전트 협업 조직 모델을 본격 구축할 시점입니다.`;
+  }
+  return msg;
+}
+
+/* SVG: 총점 게이지 */
+function renderGaugeSVG(total){
+  const pct = total / 40;
+  const angle = pct * 180;
+  const r = 80;
+  const cx = 100, cy = 95;
+  const startX = cx - r, startY = cy;
+  const rad = (180 - angle) * Math.PI / 180;
+  const endX = cx - r * Math.cos(rad * -1 + Math.PI);
+  const endY = cy - r * Math.sin(rad * -1 + Math.PI);
+  const largeArc = angle > 180 ? 1 : 0;
+  // gradient color
+  let color = '#dc2626';
+  if(total >= 11) color = '#d97706';
+  if(total >= 19) color = '#2563eb';
+  if(total >= 29) color = '#7c3aed';
+  if(total >= 36) color = '#059669';
+  return `<svg class="gauge-svg" viewBox="0 0 200 120">
+    <path d="M 20 95 A 80 80 0 0 1 180 95" fill="none" stroke="#e2e8f0" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 20 95 A 80 80 0 ${largeArc} 1 ${endX.toFixed(1)} ${endY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round"/>
+    <text x="100" y="85" text-anchor="middle" class="gauge-score-text">${total}</text>
+    <text x="100" y="105" text-anchor="middle" class="gauge-max-text">/ 40</text>
+  </svg>`;
+}
+
+/* SVG: 레이더 차트 */
+function renderRadarSVG(scores){
+  const keys = ['A','B','C','D'];
+  const labels = ['전략·리더십','교육·역량','도구·인프라','성과·문화'];
+  const colors = ['#2563eb','#7c3aed','#d97706','#059669'];
+  const size = 320;
+  const cx = size/2, cy = size/2;
+  const maxR = 110;
+  const angles = keys.map((_,i) => (Math.PI * 2 * i / 4) - Math.PI/2);
+
+  let svg = `<svg class="radar-svg" viewBox="0 0 ${size} ${size}">`;
+  // grid
+  [0.25,0.5,0.75,1].forEach(p => {
+    const r = maxR * p;
+    const pts = angles.map(a => `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`).join(' ');
+    svg += `<polygon points="${pts}" fill="none" stroke="#e2e8f0" stroke-width="1"/>`;
+  });
+  // axes
+  angles.forEach(a => {
+    svg += `<line x1="${cx}" y1="${cy}" x2="${cx+maxR*Math.cos(a)}" y2="${cy+maxR*Math.sin(a)}" stroke="#e2e8f0" stroke-width="1"/>`;
+  });
+  // data polygon
+  const dataPts = keys.map((k,i) => {
+    const r = (scores[k]/10) * maxR;
+    return `${cx+r*Math.cos(angles[i])},${cy+r*Math.sin(angles[i])}`;
+  }).join(' ');
+  svg += `<polygon points="${dataPts}" fill="rgba(37,99,235,.15)" stroke="#2563eb" stroke-width="2.5"/>`;
+  // data dots
+  keys.forEach((k,i) => {
+    const r = (scores[k]/10) * maxR;
+    const x = cx+r*Math.cos(angles[i]);
+    const y = cy+r*Math.sin(angles[i]);
+    svg += `<circle cx="${x}" cy="${y}" r="5" fill="${colors[i]}" stroke="#fff" stroke-width="2"/>`;
+  });
+  // labels
+  const labelR = maxR + 28;
+  keys.forEach((k,i) => {
+    const x = cx + labelR * Math.cos(angles[i]);
+    const y = cy + labelR * Math.sin(angles[i]);
+    const anchor = i===0||i===2?'middle':i===1?'start':'end';
+    svg += `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${colors[i]}" font-size="12" font-weight="700" dominant-baseline="central">${labels[i]}</text>`;
+    svg += `<text x="${x}" y="${y+15}" text-anchor="${anchor}" fill="#64748b" font-size="11" dominant-baseline="central">${scores[k]}/10</text>`;
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ================================================================
+   ACTIONS: COPY / EXPORT / RESET
+   ================================================================ */
+function esc(s){ return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyResult(){
+  const scores = calcSectionScores();
+  const total = calcTotal(scores);
+  const result = determineLevel(scores, total);
+  const weakest = findWeakest(scores);
+  const weakName = SECTIONS.find(s=>s.key===weakest).name;
+  const company = state.companyName || '(미입력)';
+  const date = new Date().toLocaleDateString('ko-KR');
+  const prios = PRIORITIES[result.level];
+
+  let text = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI·AX 도입 진단 결과 보고서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+진단일: ${date}
+조직명: ${company}
+조직 규모: ${state.orgSize === 'small' ? '50인 미만' : state.orgSize === 'medium' ? '50~300인' : '300인 이상'}
+
+■ 종합 결과
+총점: ${total}점 / 40점 만점
+최종 레벨: Level ${result.level} — ${result.name} 단계
+
+■ 영역별 점수
+A. 전략·리더십: ${scores.A}/10
+B. 교육·역량: ${scores.B}/10
+C. 도구·인프라: ${scores.C}/10
+D. 성과·문화: ${scores.D}/10
+
+■ 핵심 진단
+${ROADMAP_MSG[result.level]}
+
+■ 최우선 개선 영역: ${weakest}. ${weakName}
+${WEAKNESS_MSG[weakest]}
+
+■ 우선 실행 과제
+${prios.map((p,i)=>`${i+1}. ${p.title}`).join('\n')}
+
+■ 경영진 보고용 요약 (1문단)
+${generateExecMessage(scores, total, result.level, result, weakest, state.orgSize||'medium').replace(/<\/?strong>/g,'')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+본 진단은 "HR 담당자를 위한 AI·AX 도입 전략 백서 2026" 기반입니다.
+`;
+
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = event.target;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&#10003; 복사 완료';
+    btn.style.background = '#059669';
+    btn.style.color = '#fff';
+    setTimeout(()=>{ btn.innerHTML = orig; btn.style.background=''; btn.style.color=''; }, 2000);
+  }).catch(()=>alert('클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.'));
+}
+
+function exportHTML(){
+  const resultHTML = document.getElementById('screen4').innerHTML;
+  const htmlStr = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>AI·AX 진단 결과 — ${new Date().toLocaleDateString('ko-KR')}</title><style>
+body{font-family:-apple-system,'Malgun Gothic','맑은 고딕',sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#1a1a2e;background:#fff;line-height:1.7}
+:root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--primary-50:#eff6ff;--navy:#0f172a;--navy-light:#1e293b;--success:#059669;--success-light:#d1fae5;--warning:#d97706;--warning-light:#fef3c7;--danger:#dc2626;--danger-light:#fee2e2;--gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--gray-600:#475569;--gray-700:#334155;--radius:12px;--radius-lg:16px;--radius-xl:20px;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 6px -1px rgba(0,0,0,.07)}
+.card{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:32px;margin-bottom:24px;border:1px solid var(--gray-200)}
+.result-hero{background:var(--navy);color:#fff;border-radius:var(--radius-xl);padding:40px 32px;text-align:center;margin-bottom:24px}
+.result-level-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);padding:8px 20px;border-radius:24px;font-size:13px;font-weight:600;margin-bottom:16px}
+.result-level-name{font-size:36px;font-weight:900;margin-bottom:8px}
+.result-level-desc{font-size:15px;opacity:.8;max-width:500px;margin:0 auto;line-height:1.7}
+.score-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.score-card{text-align:center;padding:20px 12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);position:relative;overflow:hidden;border:1px solid var(--gray-200)}
+.score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.score-card.a::before{background:var(--primary)}.score-card.b::before{background:#7c3aed}.score-card.c::before{background:var(--warning)}.score-card.d::before{background:var(--success)}
+.score-card-label{font-size:11px;font-weight:700;color:var(--gray-500);margin-bottom:4px}
+.score-card-value{font-size:28px;font-weight:900}
+.score-card.a .score-card-value{color:var(--primary)}.score-card.b .score-card-value{color:#7c3aed}.score-card.c .score-card-value{color:var(--warning)}.score-card.d .score-card-value{color:var(--success)}
+.score-card-max{font-size:14px;font-weight:400;color:var(--gray-400)}
+.gauge-wrapper{text-align:center;padding:24px}.gauge-svg{width:200px;height:120px}.gauge-score-text{font-size:40px;font-weight:900;fill:var(--navy)}.gauge-max-text{font-size:14px;fill:var(--gray-400)}.gauge-label{font-size:14px;color:var(--gray-500);margin-top:8px;font-weight:600}
+.bar-chart{margin:16px 0}.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.bar-label{width:80px;font-size:12px;font-weight:700;color:var(--gray-600);text-align:right;flex-shrink:0}.bar-track{flex:1;height:24px;background:var(--gray-100);border-radius:6px;overflow:hidden}.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px}.bar-fill span{font-size:11px;font-weight:700;color:#fff}.bar-fill.a{background:var(--primary)}.bar-fill.b{background:#7c3aed}.bar-fill.c{background:var(--warning)}.bar-fill.d{background:var(--success)}
+.radar-wrapper{display:flex;justify-content:center;padding:20px 0}.radar-svg{width:320px;height:320px}
+.result-block{margin-bottom:24px}.result-block-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}.result-block-number{width:28px;height:28px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}.result-block-title{font-size:17px;font-weight:800;color:var(--navy)}
+.callout{padding:20px 24px;border-radius:var(--radius);margin:16px 0}.callout-navy{background:var(--navy);color:#fff}.callout-navy strong{color:#60a5fa}.callout-blue{background:var(--primary-50);border:1px solid var(--primary-light);color:var(--navy)}.callout-warn{background:var(--warning-light);border:1px solid #fde68a;color:#92400e}
+.gate-section{margin-bottom:24px}.gate-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:var(--radius);margin-bottom:8px}.gate-item.pass{background:var(--success-light)}.gate-item.fail{background:var(--danger-light)}.gate-icon{font-size:18px;flex-shrink:0;margin-top:2px}.gate-text{font-size:13px;font-weight:600}.gate-item.pass .gate-text{color:#065f46}.gate-item.fail .gate-text{color:#991b1b}
+.priority-item{display:flex;gap:12px;padding:14px 18px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--primary)}.priority-num{font-size:20px;font-weight:900;color:var(--primary);flex-shrink:0}.priority-text{font-size:14px;line-height:1.6}.priority-text strong{color:var(--navy)}
+.timeline-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--gray-100)}.timeline-item:last-child{border-bottom:none}.timeline-period{min-width:72px;padding:6px 12px;background:var(--primary-light);color:var(--primary-dark);border-radius:8px;font-size:12px;font-weight:700;text-align:center;flex-shrink:0;height:fit-content}.timeline-content{font-size:14px;line-height:1.7}
+.no-print,.actions-bar{display:none}
+.app-footer{text-align:center;padding:24px;font-size:12px;color:var(--gray-400)}
+</style></head><body>${resultHTML}</body></html>`;
+  const blob = new Blob([htmlStr], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `AX_진단결과_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetAll(){
+  if(!confirm('진단을 다시 시작하시겠습니까? 모든 응답이 초기화됩니다.')) return;
+  state = { currentScreen:1, orgSize:'', industry:'', userName:'', companyName:'', answers:{} };
+  localStorage.removeItem('ax_diag_state');
+  goToScreen(1);
+  initInfoScreen();
+}
+
+/* ================================================================
+   SAMPLE DATA FOR PREVIEW
+   ================================================================ */
+function loadSampleAndShow(){
+  state.orgSize = 'medium';
+  state.industry = '제조';
+  state.companyName = '(주)샘플테크';
+  state.userName = '홍길동';
+  // Sample answers: a mid-level organization (~18 points)
+  const sampleScores = [1,2,1,1,0, 1,1,0,1,1, 2,1,0,0,1, 1,0,1,0,1];
+  sampleScores.forEach((v,i) => { state.answers['q'+i] = v; });
+  state.currentScreen = 4;
+  saveState();
+  goToScreen(4);
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  const loaded = loadState();
+  renderProgress();
+  initInfoScreen();
+  if(loaded && state.currentScreen > 1){
+    // restore position
+    goToScreen(state.currentScreen);
+  }
+});
+</script>
+</body>
+</html>
